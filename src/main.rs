@@ -1,7 +1,7 @@
 // jkcoxson
 // All in one tool for activating JIT on iOS devices
 
-use std::{convert::TryInto, env, fmt::format, fs::File, io, ptr::NonNull};
+use std::{env, fs::File, io};
 
 use config::Device;
 mod config;
@@ -43,7 +43,16 @@ fn ui_loop() {
     loop {
         match choose_device() {
             Some(device) => {
-                let dmg_path = get_ios_dmg(&device);
+                let _dmg_path = get_ios_dmg(&device);
+                let pkg_name = choose_app(&device);
+                match device.run_app(pkg_name) {
+                    true => {
+                        println!("Successfully launched the app");
+                    }
+                    false => {
+                        println!("Failed to launch the app");
+                    }
+                }
             }
             None => {
                 println!("No devices detected, connect a device and then press enter");
@@ -110,15 +119,32 @@ fn get_ios_dmg(device: &Device) -> String {
         ),
     };
     // Download DMG zip
+    println!("Downloading iOS {} DMG...", device.version);
     let mut resp = reqwest::blocking::get(ios_dmg_url).expect("Unable to download DMG");
     let mut out = File::create("dmg.zip").expect("Failed to create zip");
     io::copy(&mut resp, &mut out).expect("failed to copy content");
     // Unzip zip
     let mut dmg_zip = zip::ZipArchive::new(File::open("dmg.zip").unwrap()).unwrap();
-    dmg_zip.extract(ios_path).unwrap();
+    dmg_zip.extract(libimobiledevice_path).unwrap();
     // Remove zip
     std::fs::remove_file("dmg.zip").unwrap();
     // Return DMG path
     let ios_dmg = ios_path.join("DeveloperDiskImage.dmg");
     ios_dmg.to_str().unwrap().to_string()
+}
+
+fn choose_app(device: &Device) -> String {
+    println!("Fetching apps installed on device...");
+    let apps = device.app_scan();
+    let mut options = vec![];
+    for (key, _) in &apps {
+        options.push(key.clone().replace("\"", ""));
+    }
+    options.sort();
+    let options: Vec<&str> = options.iter().map(|x| x.as_str()).collect();
+    let choice = user_input::multi_input("Choose an app", options.as_slice());
+    return apps
+        .get(format!("\"{}\"", choice).as_str())
+        .unwrap()
+        .clone();
 }
