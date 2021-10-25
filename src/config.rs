@@ -1,12 +1,9 @@
 // jkcoxson
 // Represents a configuration file
 
-use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env, process::Output};
 
-#[derive(Serialize, Deserialize)]
 pub struct Device {
-    detected: bool,
     pub name: String,
     pub version: String,
     pub udid: String,
@@ -15,7 +12,6 @@ pub struct Device {
 impl Device {
     pub fn new(udid: String, name: String, version: String) -> Device {
         Device {
-            detected: true,
             name,
             version,
             udid,
