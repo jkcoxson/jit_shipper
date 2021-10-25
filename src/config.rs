@@ -23,21 +23,7 @@ impl Device {
     }
 
     pub fn device_scan() -> Vec<Device> {
-        match env::consts::OS {
-            "macos" => Device::unix_scan(),
-            "linux" => Device::unix_scan(),
-            "windows" => todo!("Windows support coming soon TM"),
-            _ => {
-                panic!("Unsupported OS");
-            }
-        }
-    }
-
-    pub fn unix_scan() -> Vec<Device> {
-        let output = std::process::Command::new("idevice_id")
-            .arg("-l")
-            .output()
-            .expect("Failed to execute process");
+        let output = Device::idevice_id();
         let output_str = String::from_utf8_lossy(&output.stdout);
         let mut devices: Vec<Device> = Vec::new();
         let first_line = match output_str.lines().nth(0) {
@@ -61,11 +47,7 @@ impl Device {
 
             let info: Output;
             // Get device info
-            info = std::process::Command::new("ideviceinfo")
-                .arg("-u")
-                .arg(udid)
-                .output()
-                .expect("Failed to execute process");
+            info = Device::ideviceinfo(udid.to_string());
 
             let info = String::from_utf8_lossy(&info.stdout);
             let mut name = "";
@@ -88,6 +70,49 @@ impl Device {
             devices.push(device);
         }
         devices
+    }
+
+    /// Runs the idevice_id command and returns the output
+    pub fn idevice_id() -> Output {
+        match env::consts::OS {
+            "macos" => std::process::Command::new("idevice_id")
+                .arg("-l")
+                .output()
+                .expect("Failed to execute process"),
+            "linux" => std::process::Command::new("idevice_id")
+                .arg("-l")
+                .output()
+                .expect("Failed to execute process"),
+            "windows" => std::process::Command::new("powershell")
+                .arg("libimobiledevice/idevice_id.exe")
+                .arg("-l")
+                .output()
+                .expect("Failed to execute process"),
+            _ => panic!("Unsupported OS"),
+        }
+    }
+
+    /// Runs the ideviceinfo command and returns the output
+    pub fn ideviceinfo(uuid: String) -> Output {
+        match env::consts::OS {
+            "macos" => std::process::Command::new("ideviceinfo")
+                .arg("-u")
+                .arg(uuid)
+                .output()
+                .expect("Failed to execute process"),
+            "linux" => std::process::Command::new("ideviceinfo")
+                .arg("-u")
+                .arg(uuid)
+                .output()
+                .expect("Failed to execute process"),
+            "windows" => std::process::Command::new("powershell")
+                .arg("libimobiledevice/ideviceinfo.exe")
+                .arg("-u")
+                .arg(uuid)
+                .output()
+                .expect("Failed to execute process"),
+            _ => panic!("Unsupported OS"),
+        }
     }
 
     pub fn app_scan(&self) -> HashMap<String, String> {
@@ -133,7 +158,16 @@ impl Device {
                     .unwrap();
                 String::from_utf8_lossy(&output.stdout).to_string()
             }
-            "windows" => todo!("Windows support coming soon TM"),
+            "windows" => {
+                let output = std::process::Command::new("powershell")
+                    .arg("libimobiledevice/ideviceinstaller.exe")
+                    .arg("-l")
+                    .arg("-u")
+                    .arg(self.udid.clone())
+                    .output()
+                    .unwrap();
+                String::from_utf8_lossy(&output.stdout).to_string()
+            }
             _ => {
                 panic!("Unsupported OS");
             }
@@ -174,7 +208,23 @@ impl Device {
                 }
                 true
             }
-            "windows" => todo!("Windows support coming soon TM"),
+            "windows" => {
+                let output = std::process::Command::new("powershell")
+                    .arg("libimobiledevice/idevicedebug.exe")
+                    .arg("-u")
+                    .arg(self.udid.clone())
+                    .arg("--detach")
+                    .arg("run")
+                    .arg(pkg_identifier)
+                    .output()
+                    .expect("Failed to execute process");
+                let error = String::from_utf8_lossy(&output.stderr);
+                if error.len() > 0 {
+                    println!("{}", error);
+                    return false;
+                }
+                true
+            }
             _ => {
                 panic!("Unsupported OS");
             }
