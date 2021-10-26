@@ -8,6 +8,7 @@ use std::process::Command;
 pub fn install() {
     match env::consts::OS {
         "windows" => {
+            println!("Changing directory");
             // Change directory to home
             Command::new("powershell")
                 .arg("cd")
@@ -15,6 +16,7 @@ pub fn install() {
                 .output()
                 .expect("Failed to change directory");
 
+            println!("Curling");
             // Curl libimobiledevice
             Command::new("powershell")
                 .arg("curl")
@@ -24,6 +26,7 @@ pub fn install() {
                 .output()
                 .expect("Failed to fetch necessary files");
 
+            println!("Unzipping");
             // Unzip libimobiledevice
             Command::new("powershell")
                 .arg("unzip")
@@ -32,12 +35,13 @@ pub fn install() {
                 .expect("Failed to unzip libimobiledevice");
 
             // Remove libimobiledevice.zip
-            Command::new("powershell")
-                .arg("rm")
-                .arg("libimobiledevice.zip")
-                .output()
-                .expect("Failed to remove libimobiledevice.zip");
+            // Command::new("powershell")
+            //     .arg("rm")
+            //     .arg("libimobiledevice.zip")
+            //     .output()
+            //     .expect("Failed to remove libimobiledevice.zip");
 
+            println!("Moving");
             // Change directory to libimobiledevice
             Command::new("powershell")
                 .arg("cd")
