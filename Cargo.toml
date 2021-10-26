@@ -11,3 +11,6 @@ serde_json = "*"
 dirs = "*"
 reqwest = { version = "*", features = ["blocking"] }
 zip = "*"
+
+[build-dependencies]
+bindgen = "*"

@@ -1,18 +1,33 @@
 // jkcoxson
 // All in one tool for activating JIT on iOS devices
 
-use std::{env, fs::File, io};
+use std::{env, fs::File, io, ptr::null_mut};
 
 use config::Device;
 mod config;
 mod install;
+mod libimobiledevice_bindings;
 mod user_input;
+use libimobiledevice_bindings::*;
 
 fn main() {
     println!("#################");
     println!("## JIT Shipper ##");
     println!("##  jkcoxson   ##");
     println!("#################\n\n");
+
+    unsafe {
+        let mut devices: idevice_info_t = null_mut();
+        // LOL this is the most jank software I've ever written
+        // I have no idea what I'm doing, GitHub Copilot isn't helping much
+        // but it works
+        let mut ptr: *mut idevice_info_t = &mut devices;
+        let ptr2: *mut *mut idevice_info_t = &mut ptr;
+        let count: *mut i32 = &mut 100;
+        idevice_get_device_list_extended(ptr2, count);
+        let udid = (*devices).udid;
+        println!("UDID: {}", (*udid).to_string());
+    }
 
     // Get home directory
     let home_dir = dirs::home_dir().unwrap();
