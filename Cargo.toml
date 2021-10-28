@@ -11,6 +11,7 @@ serde_json = "*"
 dirs = "*"
 reqwest = { version = "*", features = ["blocking"] }
 zip = "*"
+rusty_libimobiledevice = { version = "*", path="../rusty_libimobiledevice" }
 
 [build-dependencies]
 bindgen = "*"
