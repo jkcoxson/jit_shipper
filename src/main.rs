@@ -4,6 +4,7 @@
 use std::{env, fs::File, io};
 
 use config::Device;
+use rusty_libimobiledevice::libimobiledevice;
 mod config;
 mod install;
 mod user_input;
@@ -18,10 +19,28 @@ fn main() {
     let devices = x.0;
     let count = x.1;
     println!("Found {} devices", count);
+    let udid = devices[0].udid.clone();
+    let ntwk = if devices[0].conn_type.clone() == 1 {
+        false
+    } else {
+        true
+    };
     for i in devices {
         println!("Device udid: {:?}", i.udid);
     }
-    println!("\n");
+    let dev =
+        rusty_libimobiledevice::libimobiledevice::idevice_new_with_options(udid, ntwk).unwrap();
+
+    println!("Connected to device: {:?}", dev.get_udid());
+
+    let debug_cli =
+        libimobiledevice::debugserver_client_start_service(dev, "Your mom part 2".to_string())
+            .unwrap();
+
+    let command =
+        libimobiledevice::debugserver_command_new("QSetMaxPacketSize:".to_string(), 2).unwrap();
+    let res = libimobiledevice::debugserver_client_send_command(debug_cli, command).unwrap();
+    println!("Res: {:?}", res);
 
     todo!("The rest of this project needs to be translated to the lib");
 
