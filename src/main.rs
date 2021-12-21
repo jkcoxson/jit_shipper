@@ -1,9 +1,14 @@
 // jkcoxson
 // All in one tool for activating JIT on iOS devices
 
-use std::{env, fs::File, io};
+use std::{
+    env,
+    fs::{self, File},
+    io,
+};
 
 use config::Device;
+use plist;
 use rusty_libimobiledevice::libimobiledevice;
 mod config;
 mod install;
@@ -40,7 +45,9 @@ fn main() {
     let command =
         libimobiledevice::debugserver_command_new("QSetMaxPacketSize:".to_string(), 2).unwrap();
     let res = libimobiledevice::debugserver_client_send_command(debug_cli, command).unwrap();
-    println!("Res: {:?}", res);
+    if res != "OK" {
+        panic!("Failed to set max packet size");
+    }
 
     todo!("The rest of this project needs to be translated to the lib");
 
@@ -48,73 +55,67 @@ fn main() {
     let home_dir = dirs::home_dir().unwrap();
     // Detect if home_dir/libimobiledevice is present
     let libimobiledevice_path = home_dir.join("libimobiledevice");
-    if libimobiledevice_path.exists() {
-        println!("libimobiledevice is installed");
-        ui_loop();
-    } else {
-        println!("libimobiledevice is NOT installed");
-        if user_input::yes_no_prompt("Would you like to install libimobiledevice?") {
-            install::install();
-        } else {
-            println!("Exiting...");
-            return;
-        }
-        ui_loop();
+    if !libimobiledevice_path.exists() {
+        // If not, create it
+        fs::create_dir(libimobiledevice_path).expect("Failed to create libimobiledevice directory");
     }
+    // Change directory to libimobiledevice
+    env::set_current_dir(libimobiledevice_path).expect("Failed to change directory");
+    ui_loop();
 }
 
 fn ui_loop() {
-    // Get directory
-    let home_dir = dirs::home_dir().unwrap();
-    let libimobiledevice_path = home_dir.join("libimobiledevice");
-    // Change path to libimobiledevice
-    env::set_current_dir(&libimobiledevice_path).unwrap();
-
     loop {
-        match choose_device() {
-            Some(device) => {
-                let _dmg_path = get_ios_dmg(&device);
-                let pkg_name = choose_app(&device);
-                match device.run_app(pkg_name) {
-                    true => {
-                        println!("Successfully launched the app");
-                    }
-                    false => {
-                        println!("Failed to launch the app");
-                    }
-                }
-            }
-            None => {
-                println!("No devices detected, connect a device and then press enter");
-                std::io::stdin().read_line(&mut String::new()).unwrap();
-            }
-        }
+        // match choose_device() {
+        //     Some(device) => {
+        //         let _dmg_path = get_ios_dmg(&device);
+        //         let pkg_name = choose_app(&device);
+        //         match device.run_app(pkg_name) {
+        //             true => {
+        //                 println!("Successfully launched the app");
+        //             }
+        //             false => {
+        //                 println!("Failed to launch the app");
+        //             }
+        //         }
+        //     }
+        //     None => {
+        //         println!("No devices detected, connect a device and then press enter");
+        //         std::io::stdin().read_line(&mut String::new()).unwrap();
+        //     }
+        // }
     }
 }
 
-fn choose_device() -> Option<Device> {
-    let devices = Device::device_scan();
-    let mut options = vec![];
-    for device in &devices {
-        options.push(device.name.clone());
-    }
-    // Check if there are any devices
-    if options.len() == 0 {
+fn choose_device() -> Option<libimobiledevice::idevice_info> {
+    todo!()
+}
+
+fn get_device_list() -> Option<Vec<Device>> {
+    let devices = rusty_libimobiledevice::libimobiledevice::idevice_get_device_list_extended()
+        .expect("Failed to get device list");
+    // If no devices are detected, return None
+    if devices.1 == 0 {
         return None;
     }
-    // Convert strings to str array
-    let options: Vec<&str> = options.iter().map(|x| x.as_str()).collect();
-    // Convert options to an array
-    let options = options.as_slice();
-    let device_name = user_input::multi_input("Choose a device", options);
-
-    for device in devices {
-        if device.name == device_name {
-            return Some(device);
-        }
+    //let mut device_list = Vec::new();
+    for i in devices.0 {
+        let idev = libimobiledevice::idevice_new_with_options(
+            i.udid,
+            if i.conn_type == 1 { false } else { true },
+        )
+        .expect("Failed to fetch device information");
+        let lock_cli =
+            libimobiledevice::lockdownd_client_new_with_handshake(idev, "JIT Shipper".to_string())
+                .expect("Failed to create lockdownd client");
+        let values =
+            libimobiledevice::lockdownd_get_value(lock_cli).expect("Failed to get product version");
+        // Get plist from values
+        //let dev_info = plist::from_bytes(values.as_bytes()).expect("Failed to parse plist");
+        //println!("{:?}", dev_info);
     }
 
-    panic!("You shouldn't see this error message, this is just to make the compiler happy.");
+    todo!()
 }
 
 fn get_ios_dmg(device: &Device) -> String {
