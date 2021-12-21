@@ -20,33 +20,14 @@ fn main() {
     println!("##  jkcoxson   ##");
     println!("#################\n\n");
 
-    let x = rusty_libimobiledevice::libimobiledevice::idevice_get_device_list_extended().unwrap();
-    let devices = x.0;
-    let count = x.1;
-    println!("Found {} devices", count);
-    let udid = devices[0].udid.clone();
-    let ntwk = if devices[0].conn_type.clone() == 1 {
-        false
-    } else {
-        true
-    };
-    for i in devices {
-        println!("Device udid: {:?}", i.udid);
+    // Get all devices attatched
+    let devices = libimobiledevice::get_devices();
+    if devices.len() < 1 {
+        println!("No devices found. Please make sure you have a device connected.");
+        return;
     }
-    let dev =
-        rusty_libimobiledevice::libimobiledevice::idevice_new_with_options(udid, ntwk).unwrap();
-
-    println!("Connected to device: {:?}", dev.get_udid());
-
-    let debug_cli =
-        libimobiledevice::debugserver_client_start_service(dev, "Your mom part 2".to_string())
-            .unwrap();
-
-    let command =
-        libimobiledevice::debugserver_command_new("QSetMaxPacketSize:".to_string(), 2).unwrap();
-    let res = libimobiledevice::debugserver_client_send_command(debug_cli, command).unwrap();
-    if res != "OK" {
-        panic!("Failed to set max packet size");
+    for i in devices {
+        println!("{:?}", i);
     }
 
     todo!("The rest of this project needs to be translated to the lib");
@@ -88,33 +69,6 @@ fn ui_loop() {
 }
 
 fn choose_device() -> Option<libimobiledevice::idevice_info> {
-    todo!()
-}
-
-fn get_device_list() -> Option<Vec<Device>> {
-    let devices = rusty_libimobiledevice::libimobiledevice::idevice_get_device_list_extended()
-        .expect("Failed to get device list");
-    // If no devices are detected, return None
-    if devices.1 == 0 {
-        return None;
-    }
-    //let mut device_list = Vec::new();
-    for i in devices.0 {
-        let idev = libimobiledevice::idevice_new_with_options(
-            i.udid,
-            if i.conn_type == 1 { false } else { true },
-        )
-        .expect("Failed to fetch device information");
-        let lock_cli =
-            libimobiledevice::lockdownd_client_new_with_handshake(idev, "JIT Shipper".to_string())
-                .expect("Failed to create lockdownd client");
-        let values =
-            libimobiledevice::lockdownd_get_value(lock_cli).expect("Failed to get product version");
-        // Get plist from values
-        //let dev_info = plist::from_bytes(values.as_bytes()).expect("Failed to parse plist");
-        //println!("{:?}", dev_info);
-    }
-
     todo!()
 }
 
