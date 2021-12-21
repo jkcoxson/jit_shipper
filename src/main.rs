@@ -41,9 +41,29 @@ fn main() {
             return;
         }
     }
+    match devices[0].start_debug_server("yeet".to_string()) {
+        Ok(()) => {
+            println!("Debug server started");
+        }
+        Err(e) => {
+            println!("Error starting debug server: {:?}", e);
+            return;
+        }
+    }
+    match devices[0].start_instproxy_service("yeet".to_string()) {
+        Ok(()) => {
+            println!("Instproxy service started");
+        }
+        Err(e) => {
+            println!("Error starting instproxy service: {:?}", e);
+            return;
+        }
+    }
     match devices[0].get_preference_plist() {
         Ok(plist) => {
             println!("Got preference plist: {}", plist);
+            let parsed: rusty_libimobiledevice::plist::Plist = plist.into();
+            println!("{:?}", parsed);
         }
         Err(e) => {
             println!("Error getting preference plist: {:?}", e);
@@ -87,10 +107,6 @@ fn ui_loop() {
         //     }
         // }
     }
-}
-
-fn choose_device() -> Option<libimobiledevice::idevice_info> {
-    todo!()
 }
 
 fn get_ios_dmg(device: &Device) -> String {
