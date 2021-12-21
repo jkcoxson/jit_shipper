@@ -21,13 +21,34 @@ fn main() {
     println!("#################\n\n");
 
     // Get all devices attatched
-    let devices = libimobiledevice::get_devices();
+    let mut devices = libimobiledevice::get_devices();
     if devices.len() < 1 {
         println!("No devices found. Please make sure you have a device connected.");
         return;
     }
-    for i in devices {
+
+    println!("Found {} devices:", devices.len());
+    for i in &devices {
         println!("{:?}", i);
+    }
+
+    match devices[0].start_lockdown_service("yeet".to_string()) {
+        Ok(()) => {
+            println!("Lockdown service started");
+        }
+        Err(e) => {
+            println!("Error starting lockdown service: {:?}", e);
+            return;
+        }
+    }
+    match devices[0].get_preference_plist() {
+        Ok(plist) => {
+            println!("Got preference plist: {}", plist);
+        }
+        Err(e) => {
+            println!("Error getting preference plist: {:?}", e);
+            return;
+        }
     }
 
     todo!("The rest of this project needs to be translated to the lib");
