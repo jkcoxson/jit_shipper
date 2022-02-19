@@ -8,7 +8,6 @@ use std::{
 };
 
 use config::Device;
-use plist;
 use rusty_libimobiledevice::libimobiledevice;
 mod config;
 mod install;
@@ -21,9 +20,9 @@ fn main() {
     println!("#################\n\n");
 
     // Get all devices attatched
-    let mut devices = libimobiledevice::get_devices();
+    let mut devices = libimobiledevice::get_devices().unwrap();
     if devices.len() < 1 {
-        println!("No devices found. Please make sure you have a device connected.");
+        println!("No devices found. Please make sure you have a device connected.\n");
         return;
     }
 
@@ -32,9 +31,9 @@ fn main() {
         println!("{:?}", i);
     }
 
-    match devices[0].start_lockdown_service("yeet".to_string()) {
+    match devices[0].start_lockdownd_service("yeet".to_string()) {
         Ok(()) => {
-            println!("Lockdown service started");
+            println!("Lockdownd service started");
         }
         Err(e) => {
             println!("Error starting lockdown service: {:?}", e);
@@ -61,9 +60,7 @@ fn main() {
     }
     match devices[0].get_preference_plist() {
         Ok(plist) => {
-            println!("Got preference plist: {}", plist);
-            let parsed: rusty_libimobiledevice::plist::Plist = plist.into();
-            println!("{:?}", parsed);
+            println!("Got preference plist: {}", String::from(plist));
         }
         Err(e) => {
             println!("Error getting preference plist: {:?}", e);
