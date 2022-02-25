@@ -6,9 +6,11 @@ use rusty_libimobiledevice::{libimobiledevice::{Device, self}, lockdownd::Lockdo
 pub struct JMoney { // Maybe a good *wrapper* name?
     chosen_device: Option<u8>,
     device_list: Option<Vec<(Device, LockdowndClient, String)>>,
+    dmg_path: Option<String>,
 
     // Show specific windows
     show_about: bool,
+    error: Option<String>,
 }
 
 impl Default for JMoney {
@@ -16,9 +18,11 @@ impl Default for JMoney {
         Self {
             chosen_device: None,
             device_list: None,
+            dmg_path: None,
 
             // Show specific windows
             show_about: false,
+            error: None,
         }
     }
 }
@@ -29,7 +33,7 @@ impl epi::App for JMoney {
     }
 
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
-        let Self { chosen_device, device_list, show_about } = self;
+        let Self { chosen_device, device_list, dmg_path, show_about, error } = self;
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
@@ -87,19 +91,40 @@ impl epi::App for JMoney {
                 *device_list = None;
                 *chosen_device = None;
             }
+            if chosen_device.is_some() {
+                if dmg_path.is_none() {
+                    let ios_version = (*device_list).as_ref().unwrap()[chosen_device.unwrap() as usize].1.get_value("ProductVersion".to_string(), "".to_string()).unwrap().get_string_val().unwrap();
+                    println!("iOS version: {}", ios_version);
+                    *dmg_path = match crate::get_ios_dmg(ios_version) {
+                        Ok(dmg_path) => Some(dmg_path),
+                        Err(e) => {
+                            println!("Error getting iOS dmg: {:?}", e);
+                            None
+                        }
+                    };
+                }
+            }
             egui::warn_if_debug_build(ui);
         });
 
 
         // Windows
         if *show_about {
-            egui::Window::new("Window").show(ctx, |ui| {
+            egui::Window::new("About").show(ctx, |ui| {
                 ui.label(RichText::new("JIT Shipper").font(FontId::proportional(20.0)).underline());
                 ui.label("Written by your boi jkcoxson");
                 ui.label("v0.1.0");
                 ui.label("All hail camels o7");
                 if ui.button("Close").clicked() {
                     *show_about = false;
+                }
+            });
+        }
+        if (*error).is_some() {
+            egui::Window::new("Error").show(ctx, |ui| {
+                ui.label((*error).as_ref().unwrap());
+                if ui.button("Close").clicked() {
+                    *error = None;
                 }
             });
         }
