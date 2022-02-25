@@ -48,7 +48,7 @@ pub fn get_ios_dmg(version: String) -> Result<String, String> {
     // Get DMG url
     let ios_dmg_url = match versions.get(version.clone()) {
         Some(x) => x.as_str().unwrap().to_string(),
-        None => return Err("Library does not contain version".to_string()),
+        None => return Err("DMG library does not contain your iOS version".to_string()),
     };
     // Download DMG zip
     println!("Downloading iOS {} DMG...", version.clone());
@@ -61,13 +61,13 @@ pub fn get_ios_dmg(version: String) -> Result<String, String> {
     let mut out = match File::create("dmg.zip") {
         Ok(out) => out,
         Err(_) => {
-            return Err("Error creating DMG.zip".to_string());
+            return Err("Error creating temp DMG.zip".to_string());
         }
     };
     match io::copy(&mut resp, &mut out) {
         Ok(_) => (),
         Err(_) => {
-            return Err("Error downloading DMG".to_string());
+            return Err("Error writing temp DMG".to_string());
         }
     };
     // Create tmp path

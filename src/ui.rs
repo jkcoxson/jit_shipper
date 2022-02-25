@@ -83,6 +83,7 @@ impl epi::App for JMoney {
                 for device in (*device_list).as_ref().unwrap().into_iter() {
                     if ui.button(String::from(device.2.clone())).clicked() {
                         *chosen_device = Some(i);
+                        *dmg_path = None;
                     }
                     i += 1;
                 }
@@ -90,6 +91,7 @@ impl epi::App for JMoney {
             if ui.button("Refresh").clicked() {
                 *device_list = None;
                 *chosen_device = None;
+                *dmg_path = None;
             }
             if chosen_device.is_some() {
                 if dmg_path.is_none() {
@@ -98,7 +100,8 @@ impl epi::App for JMoney {
                     *dmg_path = match crate::get_ios_dmg(ios_version) {
                         Ok(dmg_path) => Some(dmg_path),
                         Err(e) => {
-                            println!("Error getting iOS dmg: {:?}", e);
+                            *error = Some(e);
+                            *chosen_device = None;
                             None
                         }
                     };
