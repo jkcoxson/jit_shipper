@@ -12,8 +12,16 @@ use rusty_libimobiledevice::libimobiledevice;
 mod config;
 mod install;
 mod user_input;
+mod ui;
 
 fn main() {
+    let app = ui::JMoney::default();
+    let native_options = eframe::NativeOptions::default();
+    eframe::run_native(Box::new(app), native_options);
+
+
+
+
     println!("#################");
     println!("## JIT Shipper ##");
     println!("##  jkcoxson   ##");
@@ -31,8 +39,8 @@ fn main() {
         println!("{:?}", i);
     }
 
-    match devices[0].start_lockdownd_service("yeet".to_string()) {
-        Ok(()) => {
+    match devices[0].new_lockdownd_client("yeet".to_string()) {
+        Ok(_) => {
             println!("Lockdownd service started");
         }
         Err(e) => {
@@ -55,15 +63,6 @@ fn main() {
         }
         Err(e) => {
             println!("Error starting instproxy service: {:?}", e);
-            return;
-        }
-    }
-    match devices[0].get_preference_plist() {
-        Ok(plist) => {
-            println!("Got preference plist: {}", String::from(plist));
-        }
-        Err(e) => {
-            println!("Error getting preference plist: {:?}", e);
             return;
         }
     }
