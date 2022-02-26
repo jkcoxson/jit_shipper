@@ -6,7 +6,6 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dialoguer = "*"
 serde_json = "*"
 dirs = "*"
 reqwest = { version = "*", features = ["blocking"] }
@@ -14,6 +13,7 @@ zip = "*"
 rusty_libimobiledevice = { version = "*", path="../rusty_libimobiledevice", features = ["static"] }
 regex = "*"
 eframe = "*"
+dialoguer = "*"
 
 [build-dependencies]
 bindgen = "*"
